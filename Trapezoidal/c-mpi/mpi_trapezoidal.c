@@ -1,14 +1,15 @@
 #include <stdio.h>      /* For printf               */
 #include <mpi.h>        /* For MPI functions, etc   */
 
+const int n = 1024;         /* The total number of traps    */
+const double a = 0.0;       /* The left of the interval     */
+const double b = 100.0;     /* The right of the interval    */
+
 double f(double x) {
     return 10*x;
 }
 
 int main(void) {
-    int         n;          /* The total number of traps    */
-    double      a;          /* The left of the interval     */
-    double      b;          /* The right of the interval    */
     double      h;          /* The length of each trap      */
     int         local_n;    /* The local number of traps    */
     double      local_a;    /* The left of the subinterval  */
@@ -22,11 +23,8 @@ int main(void) {
     MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    n = 1024;
-    a = 0.0;
-    b = 3.0;
-    h = (b-a)/n;                /* h is the same for all processors */
-    local_n = n/comm_sz;        /* So is the number of trapezoids   */
+    h = (b-a)/n;
+    local_n = n/comm_sz;
 
     local_a = a + my_rank*local_n*h;
     local_b = local_a + local_n*h;
