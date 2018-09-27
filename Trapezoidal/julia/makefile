@@ -1,4 +1,4 @@
-TARGET=para_trapezoidal
+TARGET=parallel_trapezoidal
 NODES=3
 JULIA?=julia
 

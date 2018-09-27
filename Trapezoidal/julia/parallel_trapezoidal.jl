@@ -5,12 +5,9 @@ const n = 1024
 const a = 0.0
 const b = 100.0
 
-const comm_sz = length(workers())+1
-const comm_world = RemoteChannel(()->Channel{Float64}(comm_sz))
+@everywhere f(x) = 10*x     #= return =#
 
-@everywhere f(x) = 10*x
-
-@everywhere function Trap(my_rank, comm_sz, comm, n, a, b)
+@everywhere function Trap(comm_sz, my_rank, n, a, b)
     h = (b-a)/n
 
     local_n = n/comm_sz
@@ -22,21 +19,26 @@ const comm_world = RemoteChannel(()->Channel{Float64}(comm_sz))
         x = local_a + i*h
         local_int += f(x)
     end
-    local_int *= h
+    local_int *= h      #= return =#
+end
 
+@everywhere function Trap!(comm, comm_sz, my_rank, n, a, b)
+    local_int = Trap(comm_sz, my_rank, n, a, b)
     put!(comm, local_int)
 end
 
 function main()
+    comm_sz = length(workers())+1
+    comm_world = RemoteChannel(()->Channel{Float64}(comm_sz))
+
     my_rank = 1
 
-    Trap(my_rank, comm_sz, comm_world, n, a, b)
     for rank in workers()
-        remote_do(Trap, rank, rank, comm_sz, comm_world, n, a, b)
+        remote_do(Trap!, rank, comm_world, comm_sz, rank, n, a, b)
     end
 
-    total_int = 0.0
-    for p in 1:comm_sz
+    total_int = Trap(comm_sz, my_rank, n, a, b)
+    for _ in 2:comm_sz
         local_int = take!(comm_world)
         total_int += local_int
     end
