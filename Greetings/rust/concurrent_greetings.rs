@@ -4,7 +4,7 @@ use std::thread;
 
 #[allow(non_snake_case)]
 fn Greet(comm_sz: i32, my_rank: i32) -> String {
-    format!("Greetings from process {} of {}!", my_rank, comm_sz)
+    format!("Greetings from process {} of {}!", my_rank, comm_sz) // return //
 }
 
 fn main() {
