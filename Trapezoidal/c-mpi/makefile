@@ -7,11 +7,11 @@ MPIRUN?=mpirun
 all: ${EXECS}
 
 target: ${TARGET}.c
-	${MPICC} -g -Wall -o ${TARGET} ${TARGET}.c
+	${MPICC} -g -Wall -o ${TARGET}.exe ${TARGET}.c
 
 clean:
 	rm ${EXECS}
 
 run:
-	${MPIRUN} -n ${NODES} ${TARGET}
+	${MPIRUN} -n ${NODES} ${TARGET}.exe
 
