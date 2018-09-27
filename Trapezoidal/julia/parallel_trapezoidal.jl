@@ -1,9 +1,9 @@
 using Distributed
 @everywhere using Printf
 
-const n = 1024
-const a = 0.0
-const b = 100.0
+const N = 1024
+const A = 0.0
+const B = 100.0
 
 @everywhere f(x) = 10*x     #= return =#
 
@@ -34,17 +34,17 @@ function main()
     my_rank = 1
 
     for rank in workers()
-        remote_do(Trap!, rank, comm_world, comm_sz, rank, n, a, b)
+        remote_do(Trap!, rank, comm_world, comm_sz, rank, N, A, B)
     end
 
-    total_int = Trap(comm_sz, my_rank, n, a, b)
+    total_int = Trap(comm_sz, my_rank, N, A, B)
     for _ in 2:comm_sz
         local_int = take!(comm_world)
         total_int += local_int
     end
 
-    @printf "With n = %d trapezoids, our estimate\n" n
-    @printf "of the integral from %.2f to %.2f = %.15e\n" a b total_int
+    @printf "With n = %d trapezoids, our estimate\n" N
+    @printf "of the integral from %.2f to %.2f = %.15e\n" A B total_int
 end
 
 main()
