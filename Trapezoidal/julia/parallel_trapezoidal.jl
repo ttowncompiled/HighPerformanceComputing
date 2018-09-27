@@ -30,7 +30,6 @@ end
 function main()
     comm_sz = length(workers())+1
     my_rank = 1
-
     comm_world = RemoteChannel(()->Channel{Float64}(comm_sz))
 
     for rank in workers()

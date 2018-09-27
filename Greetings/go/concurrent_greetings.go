@@ -15,19 +15,23 @@ func GreetAndSend(comm_world chan string, comm_sz int, my_rank int) {
 }
 
 func main() {
+    var greeting string;
+
+    var comm_sz int
+    var my_rank int
+
     nthreads := flag.Int("n", 8, "max threads")
     flag.Parse()
 
-    comm_sz := *nthreads
-    my_rank := 0
-
+    comm_sz = *nthreads
+    my_rank = 0
     comm_world := make(chan string)
 
     for rank := 1; rank < comm_sz; rank++ {
         go GreetAndSend(comm_world, comm_sz, rank)
     }
 
-    greeting := Greet(comm_sz, my_rank)
+    greeting = Greet(comm_sz, my_rank)
     fmt.Printf("%s\n", greeting)
 
     for rank := 1; rank < comm_sz; rank++ {

@@ -16,7 +16,6 @@ end
 function main()
     comm_sz = length(workers())+1
     my_rank = 1
-
     comm_world = RemoteChannel(()->Channel{Tuple{Int32, Array{Float64}}}(comm_sz))
 
     x = [ x_i for x_i in 1:N ]

@@ -28,11 +28,16 @@ fn Trap(comm_sz: i32, my_rank: i32, n: i32, a: f64, b: f64) -> f64 {
 }
 
 fn main() {
+    let _local_int: f64;
+    let mut total_int: f64;
+
+    let comm_sz: i32;
+    let my_rank: i32;
+
     let args: Vec<String> = env::args().collect();
 
-    let comm_sz = *(&args[2].parse::<i32>().unwrap());
-    let my_rank = 0;
-
+    comm_sz = *(&args[2].parse::<i32>().unwrap());
+    my_rank = 0;
     let (comm_world_tx, comm_world_rx) = mpsc::channel();
 
     for rank in 1..comm_sz {
@@ -43,7 +48,7 @@ fn main() {
         });
     }
 
-    let mut total_int = Trap(comm_sz, my_rank, N, A, B);
+    total_int = Trap(comm_sz, my_rank, N, A, B);
     for _ in 1..comm_sz {
         let local_int = comm_world_rx.recv().unwrap();
         total_int += local_int;

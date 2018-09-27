@@ -9,11 +9,7 @@ double f(double x) {
     return 10*x;
 }
 
-double Trap(int comm_sz,    /* in   */
-            int my_rank,    /* in   */
-            int n,          /* in   */
-            double a,       /* in   */
-            double b        /* in   */) {
+double Trap(int comm_sz, int my_rank, int n, double a, double b) {
     double h = (b-a)/n;
     int local_n = n/comm_sz;
 
@@ -31,6 +27,9 @@ double Trap(int comm_sz,    /* in   */
 }
 
 int main(void) {
+    double local_int;
+    double total_int;
+
     int         comm_sz;
     int         my_rank;
 
@@ -39,11 +38,11 @@ int main(void) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (my_rank != 0) {
-        double local_int = Trap(comm_sz, my_rank, N, A, B);
+        local_int = Trap(comm_sz, my_rank, N, A, B);
         MPI_Send(&local_int, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
     } else {
-        double local_int = Trap(comm_sz, my_rank, N, A, B);
-        double total_int = local_int;
+        local_int = Trap(comm_sz, my_rank, N, A, B);
+        total_int = local_int;
         for (int q = 1; q < comm_sz; q++) {
             MPI_Recv(&local_int, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             total_int += local_int;

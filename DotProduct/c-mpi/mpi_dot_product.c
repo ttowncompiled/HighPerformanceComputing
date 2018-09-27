@@ -66,5 +66,5 @@ int main(void) {
 
     MPI_Finalize();
     return 0;
-}   /* main */
+}
 

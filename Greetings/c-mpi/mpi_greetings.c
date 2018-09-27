@@ -12,6 +12,7 @@ void Greet(int comm_sz,     /* in   */
 
 int main(void) {
     char        greeting[MAX_STRING];
+
     int         comm_sz;
     int         my_rank;
 
