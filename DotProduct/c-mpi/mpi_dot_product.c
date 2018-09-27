@@ -1,37 +1,47 @@
-#include <stdio.h>      /* for printf               */
-#include <stdlib.h>     /* for malloc               */
-#include <mpi.h>        /* for mpi functions, etc   */
+#include <stdio.h>
+#include <stdlib.h>
+#include <mpi.h>
 
-const int n = 1024;     /* The size of each vector  */
-const double k = 2.0;   /* The size of the scalar   */
+const int N = 1024;
+const double K = 2.0;
+
+void DotProduct(int n,      /* in */
+                double k,   /* in */
+                double *x,  /* in */
+                double *y,  /* in */
+                double *z   /* out */) {
+    for (int i = 0; i < n; i++) {
+        *(z+i) = ( *(x+i) + *(y+i) ) * k;
+    }
+}
 
 int main(void) {
-    double      *x;         /* The first vector x           */
-    double      *y;         /* The second vector y          */
-    double      *z;         /* The output vector z          */
-    double      local_n;    /* The local block size of n    */
-    double      *local_x;   /* The local block of x         */
-    double      *local_y;   /* The local block of y         */
-    double      *local_z;   /* The local block of z         */
-    int         comm_sz;    /* number of processes          */
-    int         my_rank;    /* my process rank              */
+    double      x[N];
+    double      y[N];
+    double      z[N];
+
+    double      local_n;
+    double      *local_x;
+    double      *local_y;
+    double      *local_z;
+
+    int         comm_sz;
+    int         my_rank;
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (my_rank == 0) {
-        x = malloc(sizeof(double) * n);
-        y = malloc(sizeof(double) * n);
-        for (int i = 0; i < n; i++) {
-            *(x+i) = i+1;
+        for (int i = 0; i < N; i++) {
+            x[i] = i+1;
         }
-        for (int j = 0; j < n; j++) {
-            *(y+j) = j+1;
+        for (int j = 0; j < N; j++) {
+            y[j] = j+1;
         }
     }
 
-    local_n = n/comm_sz;
+    local_n = N/comm_sz;
 
     local_x = malloc(sizeof(double) * local_n);
     local_y = malloc(sizeof(double) * local_n);
@@ -42,20 +52,14 @@ int main(void) {
     MPI_Scatter(y, local_n, MPI_DOUBLE,
             local_y, local_n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    for (int m = 0; m < local_n; m++) {
-        *(local_z+m) = ( *(local_x+m) + *(local_y+m) )*k;
-    }
-
-    if (my_rank == 0) {
-        z = malloc(sizeof(double) * n);
-    }
+    DotProduct(local_n, K, local_x, local_y, local_z);
 
     MPI_Gather(local_z, local_n, MPI_DOUBLE,
             z, local_n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (my_rank == 0) {
-        for (int p = 0; p < n; p++) {
-            printf("%.2lf ", *(z+p));
+        for (int m = 0; m < N; m++) {
+            printf("%.2lf ", z[m]);
         }
         printf("\n");
     }
