@@ -7,8 +7,7 @@ const int MAX_STRING = 100;
 void Greet(int comm_sz,     /* in   */
            int my_rank,     /* in   */
            char greeting[]  /* out  */) {
-    sprintf(greeting, "Greetings from process %d of %d!",
-            my_rank, comm_sz);
+    sprintf(greeting, "Greetings from process %d of %d!", my_rank, comm_sz);
 }
 
 int main(void) {
@@ -22,14 +21,12 @@ int main(void) {
 
     if (my_rank != 0) {
         Greet(comm_sz, my_rank, greeting);
-        MPI_Send(greeting, strlen(greeting)+1, MPI_CHAR,
-                0, 0, MPI_COMM_WORLD);
+        MPI_Send(greeting, strlen(greeting)+1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
     } else {
         Greet(comm_sz, my_rank, greeting);
         printf("%s\n", greeting);
         for (int q = 1; q < comm_sz; q++) {
-            MPI_Recv(greeting, MAX_STRING, MPI_CHAR,
-                    MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(greeting, MAX_STRING, MPI_CHAR, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             printf("%s\n", greeting);
         }
     }
