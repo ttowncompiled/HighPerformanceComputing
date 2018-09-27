@@ -13,13 +13,13 @@ fn main() {
     let comm_sz = *(&args[2].parse::<i32>().unwrap());
     let my_rank = 0;
 
-    let (tx, rx) = mpsc::channel();
+    let (comm_world_tx, comm_world_rx) = mpsc::channel();
 
     for rank in 1..comm_sz {
-        let tx_clone = mpsc::Sender::clone(&tx);
+        let comm_world_tx_clone = mpsc::Sender::clone(&comm_world_tx);
         thread::spawn(move || {
             let greeting = Greet(comm_sz, rank);
-            tx_clone.send(greeting).unwrap();
+            comm_world_tx_clone.send(greeting).unwrap();
         });
     }
 
@@ -27,7 +27,7 @@ fn main() {
     println!("{}", greeting);
 
     for _ in 1..comm_sz {
-        let greeting = rx.recv().unwrap();
+        let greeting = comm_world_rx.recv().unwrap();
         println!("{}", greeting);
     }
 }

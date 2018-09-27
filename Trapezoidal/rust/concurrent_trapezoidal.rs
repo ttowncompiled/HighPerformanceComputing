@@ -33,19 +33,19 @@ fn main() {
     let comm_sz = *(&args[2].parse::<i32>().unwrap());
     let my_rank = 0;
 
-    let (tx, rx) = mpsc::channel();
+    let (comm_world_tx, comm_world_rx) = mpsc::channel();
 
     for rank in 1..comm_sz {
-        let tx_clone = mpsc::Sender::clone(&tx);
+        let comm_world_tx_clone = mpsc::Sender::clone(&comm_world_tx);
         thread::spawn(move || {
             let local_int = Trap(comm_sz, rank, N, A, B);
-            tx_clone.send(local_int).unwrap();
+            comm_world_tx_clone.send(local_int).unwrap();
         });
     }
 
     let mut total_int = Trap(comm_sz, my_rank, N, A, B);
     for _ in 1..comm_sz {
-        let local_int = rx.recv().unwrap();
+        let local_int = comm_world_rx.recv().unwrap();
         total_int += local_int;
     }
 

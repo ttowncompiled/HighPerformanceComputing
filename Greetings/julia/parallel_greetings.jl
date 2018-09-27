@@ -12,9 +12,9 @@ end
 
 function main()
     comm_sz = length(workers())+1
-    comm_world = RemoteChannel(()->Channel{String}(comm_sz))
-
     my_rank = 1
+
+    comm_world = RemoteChannel(()->Channel{String}(comm_sz))
 
     for rank in workers()
         remote_do(Greet!, rank, comm_world, comm_sz, rank)

@@ -29,9 +29,9 @@ end
 
 function main()
     comm_sz = length(workers())+1
-    comm_world = RemoteChannel(()->Channel{Float64}(comm_sz))
-
     my_rank = 1
+
+    comm_world = RemoteChannel(()->Channel{Float64}(comm_sz))
 
     for rank in workers()
         remote_do(Trap!, rank, comm_world, comm_sz, rank, N, A, B)
