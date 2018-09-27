@@ -2,7 +2,7 @@ using Distributed
 @everywhere using Printf
 
 @everywhere function Greet(comm_sz, my_rank)
-    @sprintf "Greetings from process %d of %d" my_rank comm_sz
+    @sprintf "Greetings from process %d of %d" my_rank comm_sz      #= return =#
 end
 
 @everywhere function Greet!(comm, comm_sz, my_rank)
@@ -23,7 +23,7 @@ function main()
     greeting = Greet(comm_sz, my_rank)
     @printf "%s\n" greeting
 
-    for p in 2:comm_sz
+    for _ in 2:comm_sz
         greeting = take!(comm_world)
         @printf "%s\n" greeting
     end
