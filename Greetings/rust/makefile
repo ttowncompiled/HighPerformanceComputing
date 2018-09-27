@@ -1,4 +1,4 @@
-TARGET=concurrent_greeting
+TARGET=concurrent_greetings
 NODES=4
 EXECS=target
 RUSTC?=rustc
@@ -6,11 +6,11 @@ RUSTC?=rustc
 all: ${EXECS}
 
 target: ${TARGET}.rs
-	${RUSTC} ${TARGET}.rs
+	${RUSTC} -o ${TARGET}.exe ${TARGET}.rs
 
 clean:
 	rm ${EXECS}
 
 run:
-	./${TARGET} -n ${NODES}
+	./${TARGET}.exe -n ${NODES}
 
