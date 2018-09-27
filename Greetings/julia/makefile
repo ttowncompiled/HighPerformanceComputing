@@ -1,4 +1,4 @@
-TARGET=parallel_greeting
+TARGET=parallel_greetings
 NODES=3
 JULIA?=julia
 
