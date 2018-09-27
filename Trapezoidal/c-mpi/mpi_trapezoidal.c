@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <mpi.h>
 
-const int n = 1024;
-const double a = 0.0;
-const double b = 100.0;
+const int N = 1024;
+const double A = 0.0;
+const double B = 100.0;
 
 double f(double x) {
     return 10*x;
@@ -39,20 +39,17 @@ int main(void) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (my_rank != 0) {
-        double local_int = Trap(comm_sz, my_rank, n, a, b);
-        MPI_Send(&local_int, 1, MPI_DOUBLE,
-                0, 0, MPI_COMM_WORLD);
+        double local_int = Trap(comm_sz, my_rank, N, A, B);
+        MPI_Send(&local_int, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
     } else {
-        double local_int = Trap(comm_sz, my_rank, n, a, b);
+        double local_int = Trap(comm_sz, my_rank, N, A, B);
         double total_int = local_int;
         for (int q = 1; q < comm_sz; q++) {
-            MPI_Recv(&local_int, 1, MPI_DOUBLE,
-                    MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&local_int, 1, MPI_DOUBLE, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             total_int += local_int;
         }
-        printf("With n = %d trapezoids, our estimate\n", n);
-        printf("of the integral from %.2f to %.2f = %.15e\n",
-                a, b, total_int);
+        printf("With n = %d trapezoids, our estimate\n", N);
+        printf("of the integral from %.2f to %.2f = %.15e\n", A, B, total_int);
     }
 
     MPI_Finalize();
