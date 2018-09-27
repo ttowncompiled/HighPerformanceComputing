@@ -1,22 +1,27 @@
 using Distributed
+@everywhere using Printf
 
-# a distributed greet function
-@everywhere function greet(my_rank, comm_sz, comm)
-    greeting = "Greetings from process $(my_rank) of $(comm_sz)!"
+const comm_sz = length(workers())+1
+const comm_world = RemoteChannel(()->Channel{String}(comm_sz))
+
+@everywhere function Greet(comm, comm_sz, my_rank)
+    greeting = @sprintf "Greetings from process %d of %d" my_rank comm_sz
     put!(comm, greeting)
 end
 
-const my_rank = 1                                                   # the rank of the master process
-const comm_sz = length(workers())+1                                 # the total number of processes
-const comm_world = RemoteChannel(()->Channel{String}(comm_sz))      # the singleton communication channel
+function main()
+    my_rank = 1
 
-greet(my_rank, comm_sz, comm_world)
-for rank in workers()
-    remote_do(greet, rank, rank, comm_sz, comm_world)
+    Greet(comm_world, comm_sz, my_rank)
+    for rank in workers()
+        remote_do(Greet, rank, comm_world, comm_sz, rank)
+    end
+
+    for p in 1:comm_sz
+        greeting = take!(comm_world)
+        @printf "%s\n" greeting
+    end
 end
 
-for i in 1:comm_sz
-    greeting = take!(comm_world)
-    println(greeting)
-end
+main()
 
