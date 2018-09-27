@@ -1,5 +1,5 @@
 TARGET=mpi_dot_product
-NODES=4
+NODES=8
 EXECS=target
 MPICC?=mpicc
 MPIRUN?=mpirun
@@ -7,11 +7,11 @@ MPIRUN?=mpirun
 all: ${EXECS}
 
 target: ${TARGET}.c
-	${MPICC} -g -Wall -o ${TARGET} ${TARGET}.c
+	${MPICC} -g -Wall -o ${TARGET}.exe ${TARGET}.c
 
 clean:
-	rm ${EXECS}
+	rm ${TARGET}.exe
 
 run:
-	${MPIRUN} -n ${NODES} ${TARGET}
+	${MPIRUN} -n ${NODES} ${TARGET}.exe
 

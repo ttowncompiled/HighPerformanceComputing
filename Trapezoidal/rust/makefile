@@ -1,15 +1,15 @@
 TARGET=concurrent_trapezoidal
-NODES=4
+NODES=8
 EXECS=target
 RUSTC?=rustc
 
 all: ${EXECS}
 
 target: ${TARGET}.rs
-	${RUSTC} -o ${TARGET}.exe ${TARGET}.rs
+	${RUSTC} -g -o ${TARGET}.exe ${TARGET}.rs
 
 clean:
-	rm ${EXECS}
+	rm ${TARGET}.exe
 
 run:
 	./${TARGET}.exe -n ${NODES}

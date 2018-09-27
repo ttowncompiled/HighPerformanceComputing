@@ -1,5 +1,5 @@
 TARGET=mpi_trapezoidal
-NODES=4
+NODES=8
 EXECS=target
 MPICC?=mpicc
 MPIRUN?=mpirun
@@ -10,7 +10,7 @@ target: ${TARGET}.c
 	${MPICC} -g -Wall -o ${TARGET}.exe ${TARGET}.c
 
 clean:
-	rm ${EXECS}
+	rm ${TARGET}.exe
 
 run:
 	${MPIRUN} -n ${NODES} ${TARGET}.exe

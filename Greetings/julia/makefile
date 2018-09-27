@@ -1,5 +1,5 @@
 TARGET=parallel_greetings
-NODES=3
+NODES=7 # 1 less than the total #
 JULIA?=julia
 
 run:
