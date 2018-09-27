@@ -1,33 +1,40 @@
-#include <stdio.h>      /* For printf               */
-#include <string.h>     /* For strlen               */
-#include <mpi.h>        /* For MPI functions, etc   */
+#include <stdio.h>
+#include <string.h>
+#include <mpi.h>
 
 const int MAX_STRING = 100;
 
+void Greet(int comm_sz,     /* in   */
+           int my_rank,     /* in   */
+           char greeting[]  /* out  */) {
+    sprintf(greeting, "Greetings from process %d of %d!",
+            my_rank, comm_sz);
+}
+
 int main(void) {
     char        greeting[MAX_STRING];
-    int         comm_sz;    /* Number of processes  */
-    int         my_rank;    /* My process rank      */
+    int         comm_sz;
+    int         my_rank;
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (my_rank != 0) {
-        sprintf(greeting, "Greetings from process %d of %d!",
-                my_rank, comm_sz);
+        Greet(comm_sz, my_rank, greeting);
         MPI_Send(greeting, strlen(greeting)+1, MPI_CHAR,
                 0, 0, MPI_COMM_WORLD);
-    } else {    /* my_rank == 0 */
-        printf("Greetings from process %d of %d!\n", my_rank, comm_sz);
+    } else {
+        Greet(comm_sz, my_rank, greeting);
+        printf("%s\n", greeting);
         for (int q = 1; q < comm_sz; q++) {
             MPI_Recv(greeting, MAX_STRING, MPI_CHAR,
-                    q, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             printf("%s\n", greeting);
         }
     }
 
     MPI_Finalize();
     return 0;
-}   /* main */
+}
 
