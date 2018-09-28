@@ -45,6 +45,17 @@ while [ "$1" != "" ]; do
     elif [ "$1" == "--rust" ] || [ "$1" == "--all" ] ; then
         echo -e "${CYAN}>>> Installing Rust..."
         sudo apt install rustc cargo
+    elif [ "$1" == "--swift" ] || [ "$1" == "--all" ] ; then
+        echo -e "${CYAN}>>> Installing clang..."
+        sudo apt-get install clang
+        echo -e "${CYAN}>>> Installing Swift..."
+        wget https://swift.org/builds/development/ubuntu1804/swift-DEVELOPMENT-SNAPSHOT-2018-09-04-a/swift-DEVELOPMENT-SNAPSHOT-2018-09-04-a-ubuntu18.04.tar.gz
+        tar -xzf swift-DEVELOPMENT-SNAPSHOT-2018-09-04-a-ubuntu18.04.tar.gz
+        sudo mv swift-DEVELOPMENT-SNAPSHOT-2018-09-04-a-ubuntu18.04 /usr/local/
+        echo 'export PATH=${PATH}:/usr/local/swift-DEVELOPMENT-SNAPSHOT-2018-09-04-a-ubuntu18.04/usr/bin' >> ~/.bashrc
+        source ~/.bashrc
+        rm swift-DEVELOPMENT-SNAPSHOT-2018-09-04-a-ubuntu18.04.tar.gz
+    fi
     if [ "$1" == "--c" ] || [ "$1" == "--c-deps" ] || [ "$1" == "--all" ] ; then
         echo -e "${CYAN}>>> Installing C dependencies for OpenMPI..."
         sudo apt install make cmake openmpi-bin openmpi-common openmpi-doc openssh-server openssh-client libopenmpi-dev libopenmpi2
