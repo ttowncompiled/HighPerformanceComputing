@@ -16,9 +16,9 @@ void DotProduct(int n,      /* in */
 }
 
 int main(void) {
-    double      x[N];
-    double      y[N];
-    double      z[N];
+    double      *x;
+    double      *y;
+    double      *z;
 
     double      local_n;
     double      *local_x;
@@ -33,12 +33,15 @@ int main(void) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (my_rank == 0) {
+        x = malloc(sizeof(double) * N);
         for (int i = 0; i < N; i++) {
-            x[i] = i+1;
+            x[i] = i + 1;
         }
+        y = malloc(sizeof(double) * N);
         for (int j = 0; j < N; j++) {
-            y[j] = j+1;
+            y[j] = j + 1;
         }
+        z = malloc(sizeof(double) * N);
     }
 
     local_n = N/comm_sz;
