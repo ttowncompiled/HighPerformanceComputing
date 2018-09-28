@@ -18,13 +18,23 @@ while [ "$1" != "" ]; do
         echo -e "${CYAN}>>> Installing Java..."
         sudo apt install openjdk-11-jre openjdk-11-jdk
     elif [ "$1" == "--julia" ] || [ "$1" == "--all" ] ; then
-        echo -e "${CYAN}>>> Installing Julia..."
+        echo -e "${CYAN}>>> Installing wget tar..."
         sudo apt install wget tar
+        echo -e "${CYAN}>>> Installing Julia..."
         wget https://julialang-s3.julialang.org/bin/linux/x64/1.0/julia-1.0.0-linux-x86_64.tar.gz
         tar -xzf julia-1.0.0-linux-x86_64.tar.gz
         sudo mv julia-1.0.0 /usr/local/
         sudo ln -s /usr/local/julia-1.0.0/bin/julia /usr/local/bin/julia
         sudo rm julia-1.0.0-linux-x86_64.tar.gz
+    elif [ "$1" == "--kotlin" ] || [ "$1" == "--all" ] ; then
+        echo -e "${CYAN}>>> Installing Java..."
+        sudo apt install openjdk-11-jre openjdk-11-jdk
+        echo -e "${CYAN}>>> Installing snap..."
+        sudo apt install snapd
+        echo 'export PATH=${PATH}:/snap/bin' >> ~/.bashrc
+        source ~/.bashrc
+        echo -e "${CYAN}>>> Installing Kotlin..."
+        sudo snap install --classic kotlin
     elif [ "$1" == "--node" ] || [ "$1" == "--typescript" ] || [ "$1" == "--all" ] ; then
         echo -e "${CYAN}>>> Installing NodeJS and TypeScript..."
         sudo apt install nodejs npm
