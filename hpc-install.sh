@@ -48,7 +48,7 @@ while [ "$1" != "" ] ; do
             echo -e "${CYAN}>>> Installing Java...${ENDC}"
             sudo apt install openjdk-11-jre openjdk-11-jdk
         fi
-        if ! [ -x "$(command -v snapd)" ] ; then
+        if ! [ -x "$(command -v snap)" ] ; then
             echo -e "${RED}>>> snap not installed!${ENDC}"
             echo -e "${CYAN}>>> Installing snap...${ENDC}"
             sudo apt install snapd
