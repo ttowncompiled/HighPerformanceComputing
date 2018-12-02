@@ -19,7 +19,7 @@ void Determinate(double a[N-1][N-1], double *det) {
             }
         }
     }
-    (*det) = fabs(d);
+    (*det) = d;
 }
 
 int main(void) {
