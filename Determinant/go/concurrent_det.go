@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"sync"
 	"time"
@@ -45,6 +46,6 @@ func main() {
 
 	elapsed := time.Since(start)
 
-	fmt.Printf("Determinant = %e\n", d)
+	fmt.Printf("Determinant = %e\n", math.Abs(d))
 	fmt.Printf("Elapsed time = %e seconds\n", elapsed.Seconds())
 }
