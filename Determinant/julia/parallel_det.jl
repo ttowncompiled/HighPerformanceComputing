@@ -5,7 +5,7 @@ using Random
 const N = 256
 const SEED = 256
 
-@everywhere function Determinate(a, n)
+@everywhere function Determinant(a, n)
     d = 1.0
     for i in 1:n
         d = d * a[i, i]
@@ -19,7 +19,7 @@ const SEED = 256
     d
 end
 
-@everywhere function Compact(my_rank, comm_sz, a, n)
+@everywhere function Work(my_rank, comm_sz, a, n)
     local_det = 0.0
     local_a = Array{Float64}(undef, n-1, n-1)
     for k in my_rank:comm_sz:n
@@ -34,15 +34,30 @@ end
                 local_a[i-1, j-1] = a[i, j]
             end
         end
-        d = Determinate(local_a, n-1)
+        d = Determinant(local_a, n-1)
         local_det = local_det + (z * d * if (k % 2 == 1) 1 else -1 end)
     end
     local_det
 end
 
 @everywhere function Work!(comm, my_rank, comm_sz, a, n)
-    local_det = Compact(my_rank, comm_sz, a, n)
+    local_det = Work(my_rank, comm_sz, a, n)
     put!(comm, local_det)
+end
+
+function DoStuff(comm_world, my_rank, comm_sz, a, n)
+    for rank in workers()
+        remote_do(Work!, rank, comm_world, rank, comm_sz, a, n)
+    end
+
+    det = Work(my_rank, comm_sz, a, n)
+    for _ in 2:comm_sz
+        local_det = take!(comm_world)
+        det = det + local_det
+    end
+
+    det = abs(det)
+    @printf "Determinant = %e\n" det
 end
 
 function main()
@@ -53,19 +68,7 @@ function main()
     Random.seed!(SEED)
     a = rand(N, N)
 
-    for rank in workers()
-        remote_do(Work!, rank, comm_world, rank, comm_sz, a, N)
-    end
-
-    det = Compact(my_rank, comm_sz, a, N)
-    for _ in 2:comm_sz
-        local_det = take!(comm_world)
-        det = det + local_det
-    end
-
-    det = abs(det)
-    @printf "Determinate = %e\n" det
-
+    @time DoStuff(comm_world, my_rank, comm_sz, a, N)
 end
 
 main()
