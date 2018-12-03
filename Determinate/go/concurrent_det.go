@@ -2,33 +2,43 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
+	"sync"
 )
 
 const N int = 256
-const A_MAX int = 10
 const SEED int64 = 256
-const FLT_MAX float64 = 3.402823e+38
+
+func ThreadWork(wg *sync.WaitGroup, i int, a_i []float64, a_j []float64) {
+	z := a_j[i] / a_i[i]
+	for k := i+1; k < N; k++ {
+		a_j[k] = a_j[k] - z * a_i[k]
+	}
+	wg.Done()
+}
 
 func main() {
 	s := rand.NewSource(SEED)
 	r := rand.New(s)
-	var a[N][N]float64
+
+	a := make([][]float64, N)
 	for i := 0; i < N; i++ {
+		a[i] = make([]float64, N)
 		for j := 0; j < N; j++ {
-			a[i][j] = float64(r.Intn(A_MAX)+1)
+			a[i][j] = r.Float64()
 		}
 	}
+
 	d := 1.0
 	for i := 0; i < N; i++ {
-		d = math.Mod(d * math.Mod(a[i][i], FLT_MAX), FLT_MAX)
+		d = d * a[i][i]
+		var wg sync.WaitGroup
 		for j := i+1; j < N; j++ {
-			z := a[j][i] / a[i][i]
-			for k := i+1; k < N; k++ {
-				a[j][k] = a[j][k] - z * a[i][k]
-			}
+			wg.Add(1)
+			go ThreadWork(&wg, i, a[i], a[j])
 		}
+		wg.Wait()
 	}
+
 	fmt.Printf("Determinant = %e\n", d)
 }

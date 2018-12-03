@@ -1,5 +1,4 @@
 TARGET=concurrent_det
-NODES=8
 EXECS=target
 GO?=go
 
@@ -12,4 +11,4 @@ clean:
 	rm ${TARGET}.exe
 
 run:
-	./${TARGET}.exe -n ${NODES}
+	./${TARGET}.exe
