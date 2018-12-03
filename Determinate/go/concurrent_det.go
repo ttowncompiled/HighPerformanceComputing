@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
+	"time"
 )
 
 const N int = 256
@@ -29,6 +30,8 @@ func main() {
 		}
 	}
 
+	start := time.Now()
+
 	d := 1.0
 	for i := 0; i < N; i++ {
 		d = d * a[i][i]
@@ -40,5 +43,8 @@ func main() {
 		wg.Wait()
 	}
 
+	elapsed := time.Since(start)
+
 	fmt.Printf("Determinant = %e\n", d)
+	fmt.Printf("Elapsed time = %e seconds\n", elapsed.Seconds())
 }
