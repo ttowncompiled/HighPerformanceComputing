@@ -3,7 +3,7 @@ using Distributed
 using Random
 
 @everywhere const N = 256
-const SEED = 256
+@everywhere const SEED = 256
 
 @everywhere function CalculateDeterminantOf(a)
     d = 1.0
@@ -12,7 +12,7 @@ const SEED = 256
         for j in (i+1):(N-1)
             z = a[j, i] / a[i, i]
             for k in (i+1):(N-1)
-                a[j, k] = a[j, k] - z * a[i, k]
+                a[j, k] -= (z * a[i, k])
             end
         end
     end
@@ -35,7 +35,7 @@ end
             end
         end
         d = CalculateDeterminantOf(local_a)
-        local_det = local_det + (z * d * if (k % 2 == 1) 1 else -1 end)
+        local_det += (z * d * (if (k % 2 == 1) 1 else -1 end))
     end
     local_det
 end
@@ -53,7 +53,7 @@ function Do(comm_world, my_rank, comm_sz, a)
     det = CalculateDeterminantOfAfterCompacting(my_rank, comm_sz, a)
     for _ in 2:comm_sz
         local_det = take!(comm_world)
-        det = det + local_det
+        det += local_det
     end
 
     det = abs(det)
