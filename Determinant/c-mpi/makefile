@@ -1,5 +1,5 @@
 TARGET=mpi_det
-NODES=8
+NODES=4
 EXECS=target
 MPICC?=mpicc
 MPIRUN?=mpirun
