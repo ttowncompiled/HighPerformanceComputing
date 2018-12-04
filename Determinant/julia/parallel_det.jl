@@ -56,7 +56,6 @@ function Do(comm_world, my_rank, comm_sz, a)
         det += local_det
     end
 
-    det = abs(det)
     @printf "Determinant = %e\n" det
 end
 

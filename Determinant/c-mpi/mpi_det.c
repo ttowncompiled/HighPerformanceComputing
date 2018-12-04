@@ -62,7 +62,7 @@ void Do(int my_rank, int comm_sz, double a[N*N]) {
             MPI_Recv(&local_det, 1, MPI_DOUBLE, t, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             det += local_det;
         }
-        printf("Determinant = %e\n", fabs(det));
+        printf("Determinant = %e\n", det);
     } else {
         MPI_Send(&local_det, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
     }
