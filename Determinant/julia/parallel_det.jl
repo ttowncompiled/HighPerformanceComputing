@@ -2,16 +2,16 @@ using Distributed
 @everywhere using Printf
 using Random
 
-const N = 256
+@everywhere const N = 256
 const SEED = 256
 
-@everywhere function Determinant(a, n)
+@everywhere function CalculateDeterminantOf(a)
     d = 1.0
-    for i in 1:n
+    for i in 1:(N-1)
         d = d * a[i, i]
-        for j in (i+1):n
+        for j in (i+1):(N-1)
             z = a[j, i] / a[i, i]
-            for k in (i+1):n
+            for k in (i+1):(N-1)
                 a[j, k] = a[j, k] - z * a[i, k]
             end
         end
@@ -19,38 +19,38 @@ const SEED = 256
     d
 end
 
-@everywhere function Work(my_rank, comm_sz, a, n)
+@everywhere function CalculateDeterminantOfAfterCompacting(my_rank, comm_sz, a)
     local_det = 0.0
-    local_a = Array{Float64}(undef, n-1, n-1)
-    for k in my_rank:comm_sz:n
+    local_a = Array{Float64}(undef, N-1, N-1)
+    for k in my_rank:comm_sz:N
         z = a[1, k]
-        for i in 2:n
+        for i in 2:N
             for j in 1:(k-1)
                 local_a[i-1, j] = a[i, j]
             end
         end
-        for i in 2:n
-            for j in (k+1):n
+        for i in 2:N
+            for j in (k+1):N
                 local_a[i-1, j-1] = a[i, j]
             end
         end
-        d = Determinant(local_a, n-1)
+        d = CalculateDeterminantOf(local_a)
         local_det = local_det + (z * d * if (k % 2 == 1) 1 else -1 end)
     end
     local_det
 end
 
-@everywhere function Work!(comm, my_rank, comm_sz, a, n)
-    local_det = Work(my_rank, comm_sz, a, n)
+@everywhere function RemoteCalculateDeterminantOfAfterCompacting(comm, my_rank, comm_sz, a)
+    local_det = CalculateDeterminantOfAfterCompacting(my_rank, comm_sz, a)
     put!(comm, local_det)
 end
 
-function DoStuff(comm_world, my_rank, comm_sz, a, n)
+function Do(comm_world, my_rank, comm_sz, a)
     for rank in workers()
-        remote_do(Work!, rank, comm_world, rank, comm_sz, a, n)
+        remote_do(RemoteCalculateDeterminantOfAfterCompacting, rank, comm_world, rank, comm_sz, a)
     end
 
-    det = Work(my_rank, comm_sz, a, n)
+    det = CalculateDeterminantOfAfterCompacting(my_rank, comm_sz, a)
     for _ in 2:comm_sz
         local_det = take!(comm_world)
         det = det + local_det
@@ -68,7 +68,7 @@ function main()
     Random.seed!(SEED)
     a = rand(N, N)
 
-    @time DoStuff(comm_world, my_rank, comm_sz, a, N)
+    @time Do(comm_world, my_rank, comm_sz, a)
 end
 
 main()
