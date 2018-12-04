@@ -74,7 +74,7 @@ int main(void) {
     start = MPI_Wtime();
 
     for (int i = 0; i < N; i++) {
-        MPI_Bcast(&a[i], N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Scatter(a[i], N, MPI_DOUBLE, a[i], N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     }
 
     Work(a, comm_sz, my_rank, &local_det);
