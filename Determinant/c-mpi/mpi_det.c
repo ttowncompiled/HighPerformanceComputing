@@ -3,7 +3,7 @@
 #include <math.h>
 #include <mpi.h>
 
-const int N = 512;
+const int N = 256;
 const long SEED = 256;
 
 double CalculateDeterminantOf(double a[N-1][N-1]) {
