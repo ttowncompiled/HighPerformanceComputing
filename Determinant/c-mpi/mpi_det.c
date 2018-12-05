@@ -23,12 +23,12 @@ void CalculateLogDeterminantOf(double **a, int *sign_d, double *log_d) {
             }
         }
         if (i % 16 == 0) {
-            (*log_d) = (*log_d) + log10(fabs(d));
+            (*log_d) = (*log_d) + log2(fabs(d));
             d = 1.0;
         }
     }
 
-    (*log_d) = (*log_d) + log10(fabs(d));
+    (*log_d) = (*log_d) + log2(fabs(d));
 }
 
 void CalculateLogDeterminantOfAfterCompacting(int my_rank, int comm_sz, double *a, int *sign_det, double *log_det) {
@@ -47,6 +47,7 @@ void CalculateLogDeterminantOfAfterCompacting(int my_rank, int comm_sz, double *
 
     for (int k = my_rank; k < N; k += comm_sz) {
         double c_k = a[k];
+
         for (int i = 1; i < N; i++) {
             for (int j = 0; j < k; j++) {
                 local_a[i-1][j] = a[i*N + j];
@@ -67,33 +68,32 @@ void CalculateLogDeterminantOfAfterCompacting(int my_rank, int comm_sz, double *
         if (k % 2 == 1) {
             sign_d = sign_d * -1;
         }
-        log_d = log_d + log10(fabs(c_k));
-
+        log_d = log_d + log2(fabs(c_k));
 
         if (sign_d > 0) {
             if (log_x_0 < 0) {
                 log_x_0 = log_d;
             } else {
-                sum_x += pow(10, log_d - log_x_0);
+                sum_x += pow(2, log_d - log_x_0);
             }
         } else {
             if (log_y_0 < 0) {
                 log_y_0 = log_d;
             } else {
-                sum_y += pow(10, log_d - log_y_0);
+                sum_y += pow(2, log_d - log_y_0);
             }
         }
     }
 
-    double log_x = log_x_0 + log10(1 + sum_x);
-    double log_y = log_y_0 + log10(1 + sum_y);
+    double log_x = log_x_0 + log2(1 + sum_x);
+    double log_y = log_y_0 + log2(1 + sum_y);
 
     if (log_x > log_y) {
         (*sign_det) = 1;
-        (*log_det) = log_x + log10(1 - pow(10, log_y - log_x));
+        (*log_det) = log_x + log2(1 - pow(2, log_y - log_x));
     } else {
         (*sign_det) = -1;
-        (*log_det) = log_y + log10(1 - pow(10, log_x - log_y));
+        (*log_det) = log_y + log2(1 - pow(2, log_x - log_y));
     }
 }
 
@@ -118,17 +118,9 @@ void Do(int my_rank, int comm_sz, double *a) {
     CalculateLogDeterminantOfAfterCompacting(my_rank, comm_sz, a, &sign_det, &local_det);
 
     if (sign_det > 0) {
-        if (log_x_0 < 0) {
-            log_x_0 = local_det;
-        } else {
-            sum_x += pow(10, local_det - log_x_0);
-        }
+        log_x_0 = local_det;
     } else {
-        if (log_y_0 < 0) {
-            log_y_0 = local_det;
-        } else {
-            sum_y += pow(10, local_det - log_y_0);
-        }
+        log_y_0 = local_det;
     }
 
     if (my_rank == 0) {
@@ -136,21 +128,31 @@ void Do(int my_rank, int comm_sz, double *a) {
         for (int t = 1; t < comm_sz; t++) {
             MPI_Recv(&local_pair, 2, MPI_DOUBLE, t, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             if (local_pair[0] > 0) {
-                sum_x += pow(10, local_pair[1] - log_x_0);
+                if (log_x_0 < 0) {
+                    log_x_0 = local_pair[1];
+                } else {
+                    sum_x += pow(2, local_pair[1] - log_x_0);
+                }
             } else {
-                sum_y += pow(10, local_pair[1] - log_y_0);
+                if (log_y_0 < 0) {
+                    log_y_0 = local_pair[1];
+                } else {
+                    sum_y += pow(2, local_pair[1] - log_y_0);
+                }
             }
         }
 
-        double log_x = log_x_0 + log10(1 + sum_x);
-        double log_y = log_y_0 + log10(1 + sum_y);
+        double log_x = log_x_0 + log2(1 + sum_x);
+        double log_y = log_y_0 + log2(1 + sum_y);
 
         double det;
         if (log_x > log_y) {
-            det = log_x + log10(1 - pow(10, log_y - log_x));
+            det = log_x + log2(1 - pow(2, log_y - log_x));
         } else {
-            det = log_y + log10(1 - pow(10, log_x - log_y));
+            det = log_y + log2(1 - pow(2, log_x - log_y));
         }
+
+        det = det / log2(exp(1));
         printf("Determinant = %e\n", det);
     } else {
         double local_pair[2] = { sign_det, local_det };
@@ -159,8 +161,6 @@ void Do(int my_rank, int comm_sz, double *a) {
 }
 
 int main(void) {
-    double      *a;
-
     int         comm_sz;
     int         my_rank;
 
@@ -173,6 +173,8 @@ int main(void) {
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+    double *a;
 
     if (my_rank == 0) {
         a = (double*) malloc(N*N*sizeof(double));
