@@ -3,10 +3,10 @@
 #include <math.h>
 #include <mpi.h>
 
-const int N = 256;
+const int N = 128;
 const long SEED = 256;
 
-double CalculateDeterminantOf(double a[N-1][N-1]) {
+double CalculateDeterminantOf(double **a) {
     double d = 1.0;
     for (int i = 0; i < N-1; i++) {
         d = d * a[i][i];
@@ -20,9 +20,14 @@ double CalculateDeterminantOf(double a[N-1][N-1]) {
     return d;
 }
 
-double CalculateDeterminantOfAfterCompacting(int my_rank, int comm_sz, double a[N*N]) {
+double CalculateDeterminantOfAfterCompacting(int my_rank, int comm_sz, double *a) {
     double local_det = 0.0;
-    double local_a[N-1][N-1];
+    double **local_a;
+
+    local_a = (double**) malloc((N-1)*sizeof(double*));
+    for (int i = 0; i < N-1; i++) {
+        local_a[i] = (double*) malloc((N-1)*sizeof(double));
+    }
 
     for (int k = my_rank; k < N; k += comm_sz) {
         double z = a[k];
@@ -42,7 +47,7 @@ double CalculateDeterminantOfAfterCompacting(int my_rank, int comm_sz, double a[
     return local_det;
 }
 
-void Do(int my_rank, int comm_sz, double a[N*N]) {
+void Do(int my_rank, int comm_sz, double *a) {
     double det;
     double local_det;
 
@@ -51,6 +56,8 @@ void Do(int my_rank, int comm_sz, double a[N*N]) {
             MPI_Send(a, N*N, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
         }
     } else {
+        a = (double*) malloc(N*N*sizeof(double));
+
         MPI_Recv(a, N*N, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
@@ -69,7 +76,7 @@ void Do(int my_rank, int comm_sz, double a[N*N]) {
 }
 
 int main(void) {
-    double      a[N*N];
+    double      *a;
 
     int         comm_sz;
     int         my_rank;
@@ -85,9 +92,11 @@ int main(void) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (my_rank == 0) {
+        a = (double*) malloc(N*N*sizeof(double));
+
         srand(SEED);
         for (int i = 0; i < N*N; i++) {
-            a[i] = ((double) rand()) / ((double) RAND_MAX);
+            *(a+i) = ((double) rand()) / ((double) RAND_MAX);
         }
     }
 
