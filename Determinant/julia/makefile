@@ -1,6 +1,6 @@
 TARGET=parallel_det
-NODES=7  # 1 less than the total #
+NODES=3  # 1 less than the total #
 JULIA?=julia
 
 run:
-	${JULIA} -p ${NODES} ${TARGET}.jl
+	${JULIA} -p ${NODES} ${TARGET}.jl 128 256
