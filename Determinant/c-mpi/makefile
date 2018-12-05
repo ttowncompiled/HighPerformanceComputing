@@ -1,5 +1,5 @@
 TARGET=mpi_det
-NODES=8
+NODES=4
 EXECS=target
 MPICC?=mpicc
 MPIRUN?=mpirun
@@ -13,4 +13,4 @@ clean:
 	rm ${TARGET}.exe
 
 run:
-	${MPIRUN} -n ${NODES} ${TARGET}.exe
+	${MPIRUN} -n ${NODES} ${TARGET}.exe 128 256
