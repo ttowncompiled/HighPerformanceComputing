@@ -13,16 +13,16 @@ import (
 func ThreadWork(wg *sync.WaitGroup, i int, n int, a_i []float64, a_j []float64) {
 	var z float64 = a_j[i] / a_i[i]
 	for k := i+1; k < n; k++ {
-		a_j[k] = a_j[k] - z * a_i[k]
+		a_j[k] -= z * a_i[k]
 	}
 	wg.Done()
 }
 
 func CalculateLogDeterminantOf(n int, a [][]float64) {
+	var wg sync.WaitGroup
 	var log_d float64 = 0.0
 	for i := 0; i < n; i++ {
 		log_d += math.Log(math.Abs(a[i][i]))
-		var wg sync.WaitGroup
 		for j := i+1; j < n; j++ {
 			wg.Add(1)
 			go ThreadWork(&wg, i, n, a[i], a[j])
