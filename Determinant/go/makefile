@@ -1,4 +1,4 @@
-TARGET=concurrent_det
+TARGET=go_det
 EXECS=target
 GO?=go
 
