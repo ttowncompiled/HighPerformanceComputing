@@ -8,31 +8,30 @@ use std::thread;
 use std::thread::JoinHandle;
 use std::time::SystemTime;
 
-const N: usize = 256;
+#[allow(non_snake_case)]
+fn ThreadWork(handles: &mut Vec<JoinHandle<()>>, i: usize, n: usize, a_i: Arc<Vec<f64>>, a_j: Arc<Vec<f64>>) {
+    let handle: JoinHandle<_> = thread::spawn(move || {
+        match Arc::get_mut(&mut a_j.clone()) {
+            Some(ref mut a_j) => {
+                let z: f64 = a_j[i] / a_i[i];
+                for k in (i+1)..n {
+                    a_j[k] -= z * a_i[k];
+                }
+            },
+            None => (),
+        }
+    });
+    handles.push(handle);
+}
 
 #[allow(non_snake_case)]
-fn CalculateLogDeterminantOf(n: i64, a: Vec<Arc<Vec<f64>>>) {
+fn CalculateLogDeterminantOf(n: usize, a: Vec<Arc<Vec<f64>>>) {
     let mut handles: Vec<JoinHandle<_>> = Vec::new();
-
-    let mut d: f64 = 1.0;
-    for i in 0..N {
-        d = d * a[i][i];
-        for j in (i+1)..N {
-            let a_i = a[i].clone();
-            let a_j = a[j].clone();
-            let handle: JoinHandle<_> = thread::spawn(move || {
-                match Arc::get_mut(&mut a_j.clone()) {
-                    Some(ref mut a_j) => {
-                        let z: f64 = a_j[i] / a_i[i];
-                        for k in (i+1)..N {
-                            let val = a_j[k] - z * a_i[k];
-                            a_j[k] = val;
-                        }
-                    },
-                    None => (),
-                }
-            });
-            handles.push(handle);
+    let mut log_d: f64 = 0.0;
+    for i in 0..n {
+        log_d += a[i][i].abs().log2();
+        for j in (i+1)..n {
+            ThreadWork(&mut handles, i, n, a[i].clone(), a[j].clone());
         }
         while ! handles.is_empty() {
             match handles.pop() {
@@ -47,12 +46,12 @@ fn CalculateLogDeterminantOf(n: i64, a: Vec<Arc<Vec<f64>>>) {
         }
     }
 
-    println!("Determinant = {:e}", d.abs());
+    println!("log(abs(det)) = {:e}", log_d);
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let n: i64 = *(&args[1].parse::<i64>().unwrap());
+    let n: usize = *(&args[1].parse::<usize>().unwrap());
     let seed: u64 = *(&args[2].parse::<u64>().unwrap());
 
     let mut rng: StdRng = StdRng::seed_from_u64(seed);
@@ -61,7 +60,7 @@ fn main() {
     for _ in 0..n {
         a.push(Arc::new(
             (0..n).map(|_| {
-                rng.gen::<f64>()
+                rng.gen::<f64>() - 0.5
             }).collect()
         ));
     }
