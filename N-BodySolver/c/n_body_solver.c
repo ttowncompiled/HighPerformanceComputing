@@ -9,7 +9,6 @@ const double G = 6.673e-11;
 
 void Do(long n, double *masses, double **s, double **v, long steps) {
     for (int t = 0; t <= steps; t++) {
-#       pragma omp parallel for
         for (int q = 0; q < n; q++) {
             double force_q[DIMS];
             for (int k = 0; k < n; k++) {
@@ -35,7 +34,7 @@ void Do(long n, double *masses, double **s, double **v, long steps) {
         }
     }
     for (int q = 0; q < n; q++) {
-        printf("s[%d][%d] = %.2f", q, 0, s[q][0]);
+        printf("s[%d][%d] = %e", q, 0, s[q][0]);
         for (int d = 1; d < DIMS; d++) {
             printf(", s[%d][%d] = %e", q, d, s[q][d]);
         }
@@ -50,13 +49,13 @@ int main(int argc, char* argv[]) {
     long n = strtol(argv[1], NULL, 10);
     long steps = strtol(argv[2], NULL, 10);
 
-    double *masses = (double*) malloc(n*sizeof(double));
-    double **s = (double**) malloc(n*sizeof(double*));
-    double **v = (double**) malloc(n*sizeof(double*));
-
     double mass = 5.0e24;
     double gap = 1.0e5;
     double speed = 3.0e4;
+
+    double *masses = (double*) malloc(n*sizeof(double));
+    double **s = (double**) malloc(n*sizeof(double*));
+    double **v = (double**) malloc(n*sizeof(double*));
 
     for (int q = 0; q < n; q++) {
         masses[q] = mass;
