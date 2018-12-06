@@ -4,48 +4,54 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 )
 
-const N int = 256
-const SEED int64 = 256
-
-func ThreadWork(wg *sync.WaitGroup, i int, a_i []float64, a_j []float64) {
-	z := a_j[i] / a_i[i]
-	for k := i+1; k < N; k++ {
+func ThreadWork(wg *sync.WaitGroup, i int, n int, a_i []float64, a_j []float64) {
+	var z float64 = a_j[i] / a_i[i]
+	for k := i+1; k < n; k++ {
 		a_j[k] = a_j[k] - z * a_i[k]
 	}
 	wg.Done()
 }
 
+func CalculateLogDeterminantOf(n int, a [][]float64) {
+	var log_d float64 = 0.0
+	for i := 0; i < n; i++ {
+		log_d += math.Log(math.Abs(a[i][i]))
+		var wg sync.WaitGroup
+		for j := i+1; j < n; j++ {
+			wg.Add(1)
+			go ThreadWork(&wg, i, n, a[i], a[j])
+		}
+		wg.Wait()
+	}
+	fmt.Printf("log(abs(det)) = %e\n", log_d)
+}
+
 func main() {
-	s := rand.NewSource(SEED)
+	var n, seed int
+	n, _ = strconv.Atoi(os.Args[1])
+	seed, _ = strconv.Atoi(os.Args[2])
+
+	s := rand.NewSource(int64(seed))
 	r := rand.New(s)
 
-	a := make([][]float64, N)
-	for i := 0; i < N; i++ {
-		a[i] = make([]float64, N)
-		for j := 0; j < N; j++ {
+	a := make([][]float64, n)
+	for i := 0; i < n; i++ {
+		a[i] = make([]float64, n)
+		for j := 0; j < n; j++ {
 			a[i][j] = r.Float64()
 		}
 	}
 
 	start := time.Now()
 
-	d := 1.0
-	for i := 0; i < N; i++ {
-		d = d * a[i][i]
-		var wg sync.WaitGroup
-		for j := i+1; j < N; j++ {
-			wg.Add(1)
-			go ThreadWork(&wg, i, a[i], a[j])
-		}
-		wg.Wait()
-	}
+	CalculateLogDeterminantOf(n, a)
 
 	elapsed := time.Since(start)
-
-	fmt.Printf("Determinant = %e\n", math.Abs(d))
 	fmt.Printf("Elapsed time = %e seconds\n", elapsed.Seconds())
 }

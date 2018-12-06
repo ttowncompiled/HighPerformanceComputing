@@ -11,4 +11,4 @@ clean:
 	rm ${TARGET}.exe
 
 run:
-	./${TARGET}.exe
+	./${TARGET}.exe 128 256
