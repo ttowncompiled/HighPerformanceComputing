@@ -150,7 +150,7 @@ void Do(int my_rank, int comm_sz, long n, double *a) {
         }
 
         det = det / log2(exp(1));
-        printf("Determinant = %e\n", det);
+        printf("log(abs(det)) = %e\n", det);
     } else {
         double local_pair[2] = { sign_det, local_det };
         MPI_Send(&local_pair, 2, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);

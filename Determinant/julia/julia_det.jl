@@ -134,7 +134,7 @@ function Do(comm_world, my_rank, comm_sz, n, a)
     end
 
     det = det / log2(exp(1))
-    @printf "Determinant = %e\n" det
+    @printf "log(abs(det)) = %e\n" det
 end
 
 function main()
