@@ -44,7 +44,7 @@ func main() {
 	for i := 0; i < n; i++ {
 		a[i] = make([]float64, n)
 		for j := 0; j < n; j++ {
-			a[i][j] = r.Float64()
+			a[i][j] = r.Float64() - 0.5
 		}
 	}
 

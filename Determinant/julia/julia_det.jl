@@ -146,7 +146,7 @@ function main()
     comm_world::RemoteChannel{Channel{Tuple{Int64, Float64}}} = RemoteChannel(()->Channel{Tuple{Int64, Float64}}(comm_sz))
 
     Random.seed!(seed)
-    a::Array{Float64, 2} = rand(n, n)
+    a::Array{Float64, 2} = rand(n, n) .- 0.5
 
     @time Do(comm_world, my_rank, comm_sz, n, a)
 end

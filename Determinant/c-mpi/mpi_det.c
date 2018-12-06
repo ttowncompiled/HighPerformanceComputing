@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
 
         srand(seed);
         for (int i = 0; i < n*n; i++) {
-            *(a+i) = ((double) rand()) / ((double) RAND_MAX) - 1.0;
+            *(a+i) = ((double) rand()) / ((double) RAND_MAX) - 0.5;
         }
     }
 
