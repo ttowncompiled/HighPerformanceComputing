@@ -2,28 +2,16 @@ extern crate rand;
 
 use rand::prelude::*;
 use rand::rngs::StdRng;
+use std::env;
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::SystemTime;
 
 const N: usize = 256;
-const SEED: u64 = 256;
 
-fn main() {
-    let mut rng = StdRng::seed_from_u64(SEED);
-
-    let mut a: Vec<Arc<Vec<f64>>> = Vec::new();
-    for _ in 0..N {
-        a.push(Arc::new(
-            (0..N).map(|_| {
-                rng.gen()
-            }).collect()
-        ));
-    }
-
-    let start = SystemTime::now();
-
+#[allow(non_snake_case)]
+fn CalculateLogDeterminantOf(n: i64, a: Vec<Arc<Vec<f64>>>) {
     let mut handles: Vec<JoinHandle<_>> = Vec::new();
 
     let mut d: f64 = 1.0;
@@ -60,6 +48,28 @@ fn main() {
     }
 
     println!("Determinant = {:e}", d.abs());
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    let n: i64 = *(&args[1].parse::<i64>().unwrap());
+    let seed: u64 = *(&args[2].parse::<u64>().unwrap());
+
+    let mut rng: StdRng = StdRng::seed_from_u64(seed);
+
+    let mut a: Vec<Arc<Vec<f64>>> = Vec::new();
+    for _ in 0..n {
+        a.push(Arc::new(
+            (0..n).map(|_| {
+                rng.gen::<f64>()
+            }).collect()
+        ));
+    }
+
+    let start = SystemTime::now();
+
+    CalculateLogDeterminantOf(n, a);
+
     match start.elapsed() {
         Ok(elapsed) => {
             let s = elapsed.as_secs() as f64 + elapsed.subsec_nanos() as f64 * 1e-9;

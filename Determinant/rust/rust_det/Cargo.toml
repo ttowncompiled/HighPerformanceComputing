@@ -1,5 +1,5 @@
 [package]
-name = "concurrent_det"
+name = "rust_det"
 version = "0.1.0"
 authors = ["ttowncompiled <ian.riley.915@gmail.com>"]
 
