@@ -1,4 +1,4 @@
-TARGET=parallel_det
+TARGET=julia_det
 NODES=3  # 1 less than the total #
 JULIA?=julia
 
