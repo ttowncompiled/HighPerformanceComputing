@@ -31,12 +31,11 @@ fun Do(n: Int, masses: DoubleArray, s: Array<DoubleArray>, v: Array<DoubleArray>
         }
     }
     for (q in 0 until n) {
-        print("s[%d][%d] = %e".format(q, 0, s[q][0]))
-        for (d in 1 until DIMS) {
-            print(", s[%d][%d] = %e".format(q, d, s[q][d]))
+        for (d in 0 until DIMS) {
+            print("s[%d][%d] = %e\n".format(q, d, s[q][d]))
         }
         for (d in 0 until DIMS) {
-            print(", v[%d][%d] = %e".format(q, d, v[q][d]))
+            print("v[%d][%d] = %e\n".format(q, d, v[q][d]))
         }
         print("\n")
     }

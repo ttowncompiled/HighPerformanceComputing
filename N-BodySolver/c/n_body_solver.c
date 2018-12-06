@@ -34,12 +34,11 @@ void Do(long n, double *masses, double **s, double **v, long steps) {
         }
     }
     for (int q = 0; q < n; q++) {
-        printf("s[%d][%d] = %e", q, 0, s[q][0]);
-        for (int d = 1; d < DIMS; d++) {
-            printf(", s[%d][%d] = %e", q, d, s[q][d]);
+        for (int d = 0; d < DIMS; d++) {
+            printf("s[%d][%d] = %e\n", q, d, s[q][d]);
         }
         for (int d = 0; d < DIMS; d++) {
-            printf(", v[%d][%d] = %e", q, d, v[q][d]);
+            printf("v[%d][%d] = %e\n", q, d, v[q][d]);
         }
         printf("\n");
     }
