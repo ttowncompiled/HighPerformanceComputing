@@ -145,6 +145,8 @@ function main()
     my_rank::Int64 = 1
     comm_world::RemoteChannel{Channel{Tuple{Int64, Float64}}} = RemoteChannel(()->Channel{Tuple{Int64, Float64}}(comm_sz))
 
+    @printf "my_rank=%d, comm_sz=%d, n=%d, seed=%d\n" my_rank comm_sz n seed
+
     Random.seed!(seed)
     a::Array{Float64, 2} = rand(n, n) .- 0.5
 

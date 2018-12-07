@@ -174,6 +174,8 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
+    printf("my_rank=%d, comm_sz=%d, n=%ld, seed=%ld\n", my_rank, comm_sz, n, seed);
+
     double *a;
 
     if (my_rank == 0) {

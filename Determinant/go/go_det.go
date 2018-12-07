@@ -37,6 +37,8 @@ func main() {
 	n, _ = strconv.Atoi(os.Args[1])
 	seed, _ = strconv.Atoi(os.Args[2])
 
+	fmt.Printf("n=%d, seed=%d\n", n, seed)
+
 	s := rand.NewSource(int64(seed))
 	r := rand.New(s)
 

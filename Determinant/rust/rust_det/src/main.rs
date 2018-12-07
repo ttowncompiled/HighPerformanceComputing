@@ -54,6 +54,8 @@ fn main() {
     let n: usize = *(&args[1].parse::<usize>().unwrap());
     let seed: u64 = *(&args[2].parse::<u64>().unwrap());
 
+    println!("n={}, seed={}", n, seed);
+
     let mut rng: StdRng = StdRng::seed_from_u64(seed);
 
     let mut a: Vec<Arc<Vec<f64>>> = Vec::new();

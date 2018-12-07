@@ -54,6 +54,8 @@ int main(int argc, char* argv[]) {
     long n = strtol(argv[1], NULL, 10);
     long seed = strtol(argv[2], NULL, 10);
 
+    printf("n=%ld, seed=%ld\n", n, seed);
+
     double **a = (double**) malloc(n*sizeof(double*));
 
     srand(seed);
