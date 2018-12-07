@@ -54,6 +54,8 @@ fun main(args: Array<String>) {
     val n: Int = args[0].toInt()
     val steps: Int = args[1].toInt()
 
+    println("n=%d, steps=%d".format(n, steps))
+
     val mass: Double = 5.0e24
     val gap: Double = 1.0e5
     val speed: Double = 3.0e4

@@ -10,4 +10,4 @@ clean:
 	rm -r target/
 
 run:
-	${JAVA} -jar ./target/${TARGET}-jar-with-dependencies.jar 12 10
+	${JAVA} -jar ./target/${TARGET}-jar-with-dependencies.jar 8 60
