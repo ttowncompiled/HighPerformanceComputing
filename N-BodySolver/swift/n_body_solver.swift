@@ -4,31 +4,39 @@ import Foundation
 let DIMS: Int = 2
 let G: Double = 6.673e-11
 
-func Do(_ n: Int, _ masses: [Double], _ s: inout [[Double]], _ v: inout [[Double]], _ steps: Int) {
+func Do(_ n: Int, _ masses: [Double], _ s0: [[Double]], _ v0: [[Double]], _ steps: Int) {
+    var s = s0
+    var v = v0
     for _ in 0...steps {
+        let group: DispatchGroup = DispatchGroup()
         for q in 0..<n {
-            var force_q: [Double] = Array(repeating: 0.0, count: DIMS)
-            for k in 0..<n {
-                if k == q {
-                    continue
+            group.enter()
+            DispatchQueue.global(qos: .background).async {
+                var force_q: [Double] = Array(repeating: 0.0, count: DIMS)
+                for k in 0..<n {
+                    if k == q {
+                        continue
+                    }
+                    var diff: [Double] = Array(repeating: 0.0, count: DIMS)
+                    var dist: Double = 0.0
+                    for d in 0..<DIMS {
+                        diff[d] = s[k][d] - s[q][d]
+                        dist += diff[d]*diff[d]
+                    }
+                    dist = sqrt(dist)
+                    let dist_cubed: Double = dist*dist*dist
+                    for d in 0..<DIMS {
+                        force_q[d] += G*masses[q]*masses[k]/dist_cubed * diff[d]
+                    }
                 }
-                var diff: [Double] = Array(repeating: 0.0, count: DIMS)
-                var dist: Double = 0.0
                 for d in 0..<DIMS {
-                    diff[d] = s[k][d] - s[q][d]
-                    dist += diff[d]*diff[d]
+                    s[q][d] += v[q][d]
+                    v[q][d] += force_q[d] / masses[q]
                 }
-                dist = sqrt(dist)
-                let dist_cubed: Double = dist*dist*dist
-                for d in 0..<DIMS {
-                    force_q[d] += G*masses[q]*masses[k]/dist_cubed * diff[d]
-                }
-            }
-            for d in 0..<DIMS {
-                s[q][d] += v[q][d]
-                v[q][d] += force_q[d] / masses[q]
+                group.leave()
             }
         }
+        group.wait()
     }
     for q in 0..<n {
         for d in 0..<DIMS {
@@ -70,7 +78,7 @@ func main() {
 
     let start: DispatchTime = DispatchTime.now()
 
-    Do(n, masses, &s, &v, steps)
+    Do(n, masses, s, v, steps)
 
     let finish: DispatchTime = DispatchTime.now()
     let elapsed: Double = Double(finish.uptimeNanoseconds - start.uptimeNanoseconds) / 1.0e9
