@@ -1,15 +1,13 @@
-TARGET=n_body_solver
+TARGET=n-body-solver-1.0
 EXECS=target
-KOTLINC?=kotlinc
+MVN?=mvn
 JAVA?=java
 
-all: ${EXECS}
-
-target: ${TARGET}.kt
-	${KOTLINC} ${TARGET}.kt -include-runtime -d ${TARGET}.jar
+all:
+	${MVN} package
 
 clean:
-	rm ${TARGET}.jar
+	rm -r target/
 
 run:
-	${JAVA} -jar ${TARGET}.jar 12 10
+	${JAVA} -jar ./target/${TARGET}-jar-with-dependencies.jar 12 10
