@@ -1,36 +1,69 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <pthread.h>
 #include <time.h>
-#include <omp.h>
 
 const long DIMS = 2;
 const double G = 6.673e-11;
 
+struct arg_struct {
+    int q;
+    int n;
+    double* masses;
+    double** s;
+    double** v;
+};
+
+void* ThreadWork(void* args_) {
+    struct arg_struct *args = (struct arg_struct*) args_;
+    int q = args->q;
+    int n = args->n;
+    double* masses = args->masses;
+    double **s = args->s;
+    double **v = args->v;
+
+    double force_q[DIMS];
+    for (int k = 0; k < n; k++) {
+        if (k == q) {
+            continue;
+        }
+        double diff[DIMS];
+        double dist = 0.0;
+        for (int d = 0; d < DIMS; d++) {
+            diff[d] = s[k][d] - s[q][d];
+            dist += diff[d]*diff[d];
+        }
+        dist = sqrt(dist);
+        double dist_cubed = dist*dist*dist;
+        for (int d = 0; d < DIMS; d++) {
+            force_q[d] += G*masses[q]*masses[k]/dist_cubed * diff[d];
+        }
+    }
+    for (int d = 0; d < DIMS; d++) {
+        s[q][d] += v[q][d];
+        v[q][d] += force_q[d] / masses[q];
+    }
+
+    free(args);
+    return NULL;
+}
+
 void Do(long n, double *masses, double **s, double **v, long steps) {
+    pthread_t* thread_handles = (pthread_t*) malloc(n*sizeof(pthread_t));
     for (int t = 0; t <= steps; t++) {
+        struct arg_struct *args;
         for (int q = 0; q < n; q++) {
-            double force_q[DIMS];
-            for (int k = 0; k < n; k++) {
-                if (k == q) {
-                    continue;
-                }
-                double diff[DIMS];
-                double dist = 0.0;
-                for (int d = 0; d < DIMS; d++) {
-                    diff[d] = s[k][d] - s[q][d];
-                    dist += diff[d]*diff[d];
-                }
-                dist = sqrt(dist);
-                double dist_cubed = dist*dist*dist;
-                for (int d = 0; d < DIMS; d++) {
-                    force_q[d] += G*masses[q]*masses[k]/dist_cubed * diff[d];
-                }
-            }
-            for (int d = 0; d < DIMS; d++) {
-                s[q][d] += v[q][d];
-                v[q][d] += force_q[d] / masses[q];
-            }
+            args = malloc(sizeof(struct arg_struct));
+            args->q = q;
+            args->n = n;
+            args->masses = masses;
+            args->s = s;
+            args->v = v;
+            pthread_create(&thread_handles[q], NULL, ThreadWork, (void*) args);
+        }
+        for (int q = 0; q < n; q++) {
+            pthread_join(thread_handles[q], NULL);
         }
     }
     for (int q = 0; q < n; q++) {
@@ -42,6 +75,7 @@ void Do(long n, double *masses, double **s, double **v, long steps) {
         }
         printf("\n");
     }
+    free(thread_handles);
 }
 
 int main(int argc, char* argv[]) {

@@ -5,7 +5,7 @@ GCC?=gcc
 all: ${EXECS}
 
 target: ${TARGET}.c
-	${GCC} -g -Wall -fopenmp -o ${TARGET}.exe ${TARGET}.c -lm
+	${GCC} -g -Wall -o ${TARGET}.exe ${TARGET}.c -lm -lpthread
 
 clean:
 	rm ${TARGET}.exe
