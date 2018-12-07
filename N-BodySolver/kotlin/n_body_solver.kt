@@ -6,27 +6,31 @@ val G: Double = 6.673e-11
 
 fun Do(n: Int, masses: DoubleArray, s: Array<DoubleArray>, v: Array<DoubleArray>, steps: Int) {
     for (t in 0..steps) {
-        for (q in 0 until n) {
-            var force_q: DoubleArray = DoubleArray(DIMS, { 0.0 })
-            for (k in 0 until n) {
-                if (k == q) {
-                    continue
+        runBlocking {
+            for (q in 0 until n) {
+                launch {
+                    var force_q: DoubleArray = DoubleArray(DIMS, { 0.0 })
+                    for (k in 0 until n) {
+                        if (k == q) {
+                            continue
+                        }
+                        var diff: DoubleArray = DoubleArray(DIMS, { 0.0 })
+                        var dist: Double = 0.0
+                        for (d in 0 until DIMS) {
+                            diff[d] = s[k][d] - s[q][d]
+                            dist += diff[d]*diff[d]
+                        }
+                        dist = sqrt(dist)
+                        val dist_cubed: Double = dist*dist*dist
+                        for (d in 0 until DIMS) {
+                            force_q[d] += G*masses[q]*masses[k]/dist_cubed * diff[d]
+                        }
+                    }
+                    for (d in 0 until DIMS) {
+                        s[q][d] += v[q][d]
+                        v[q][d] += force_q[d] / masses[q]
+                    }
                 }
-                var diff: DoubleArray = DoubleArray(DIMS, { 0.0 })
-                var dist: Double = 0.0
-                for (d in 0 until DIMS) {
-                    diff[d] = s[k][d] - s[q][d]
-                    dist += diff[d]*diff[d]
-                }
-                dist = sqrt(dist)
-                val dist_cubed: Double = dist*dist*dist
-                for (d in 0 until DIMS) {
-                    force_q[d] += G*masses[q]*masses[k]/dist_cubed * diff[d]
-                }
-            }
-            for (d in 0 until DIMS) {
-                s[q][d] += v[q][d]
-                v[q][d] += force_q[d] / masses[q]
             }
         }
     }
