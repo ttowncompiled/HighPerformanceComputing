@@ -76,9 +76,6 @@ fun main(args: Array<String>) {
                 v[q][d] = -speed
             }
         }
-        for (d in 0 until DIMS) {
-            f[q][d] = 0.0
-        }
     }
 
     val elapsed = measureNanoTime {
