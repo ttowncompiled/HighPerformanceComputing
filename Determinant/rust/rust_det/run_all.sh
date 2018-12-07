@@ -1,3 +1,4 @@
+. run_8.sh
 . run_16.sh
 . run_32.sh
 . run_64.sh
