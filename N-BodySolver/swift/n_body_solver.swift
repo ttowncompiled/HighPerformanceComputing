@@ -60,6 +60,8 @@ func main() {
     let n: Int = Int(CommandLine.arguments[1])!
     let steps: Int = Int(CommandLine.arguments[2])!
 
+    print(String(format: "n=%d, seed=%d", n, steps))
+
     let mass: Double = 5.0e24
     let gap: Double = 1.0e5
     let speed: Double = 3.0e4

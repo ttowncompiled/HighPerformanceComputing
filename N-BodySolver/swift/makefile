@@ -11,4 +11,4 @@ clean:
 	rm ${TARGET}.exe
 
 run:
-	./${TARGET}.exe 12 10
+	./${TARGET}.exe 8 60
