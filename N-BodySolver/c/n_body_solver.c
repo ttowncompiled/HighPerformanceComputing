@@ -87,6 +87,8 @@ int main(int argc, char* argv[]) {
     long n = strtol(argv[1], NULL, 10);
     long steps = strtol(argv[2], NULL, 10);
 
+    printf("n=%ld, steps=%ld\n", n, steps);
+
     double mass = 5.0e24;
     double gap = 1.0e5;
     double speed = 3.0e4;
