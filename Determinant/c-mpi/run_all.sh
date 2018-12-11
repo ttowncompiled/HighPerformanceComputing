@@ -1,9 +1,9 @@
-sbatch run_1_1024.sh
-sbatch run_2_1024.sh
-sbatch run_4_1024.sh
-sbatch run_8_1024.sh
-sbatch run_16_1024.sh
-sbatch run_32_1024.sh
+sbatch run_1_256.sh
+sbatch run_2_256.sh
+sbatch run_4_256.sh
+sbatch run_8_256.sh
+sbatch run_16_256.sh
+sbatch run_32_256.sh
 sbatch run_64_64.sh
 sbatch run_64_128.sh
 sbatch run_64_256.sh
