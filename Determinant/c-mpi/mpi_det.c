@@ -1,160 +1,77 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <mpi.h>
 
-void CalculateLogDeterminantOf(long n, double **a, int *sign_d, double *log_d) {
-    (*sign_d) = 1;
-    (*log_d) = 0.0;
-
-    double d = 1.0;
+void ComputeLogTrace(int my_rank, int comm_sz, long n, int local_n, double** local_a) {
+    double *a_i = (double*) malloc(n*sizeof(double));
     for (int i = 0; i < n; i++) {
-        if (a[i][i] < 0) {
-            (*sign_d) = (*sign_d) * -1;
+        if (i % comm_sz == my_rank) {
+            for (int j = 0; j < n; j++) {
+                a_i[j] = local_a[i / comm_sz][j];
+            }
+            for (int rank = 0; rank < comm_sz; rank++) {
+                if (rank == my_rank) {
+                    continue;
+                }
+                MPI_Send(a_i, n, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
+            }
+        } else {
+            MPI_Recv(a_i, n, MPI_DOUBLE, i % comm_sz, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
-        d *= a[i][i];
         for (int j = i+1; j < n; j++) {
-            double z = a[j][i] / a[i][i];
-            for (int k = i+1; k < n; k++) {
-                a[j][k] -= (z * a[i][k]);
-            }
-        }
-        if (i % 16 == 0) {
-            (*log_d) = (*log_d) + log2(fabs(d));
-            d = 1.0;
-        }
-    }
-
-    (*log_d) = (*log_d) + log2(fabs(d));
-}
-
-void CalculateLogDeterminantOfAfterCompacting(int my_rank, int comm_sz, long n, double *a, int *sign_det, double *log_det) {
-    double **local_a;
-
-    local_a = (double**) malloc((n-1)*sizeof(double*));
-    for (int i = 0; i < n-1; i++) {
-        local_a[i] = (double*) malloc((n-1)*sizeof(double));
-    }
-
-    double log_x_0 = -1.0; // negative is invalid
-    double log_y_0 = -1.0; // negative is invalid
-
-    double sum_x = 0.0;
-    double sum_y = 0.0;
-
-    for (int k = my_rank; k < n; k += comm_sz) {
-        double c_k = a[k];
-
-        for (int i = 1; i < n; i++) {
-            for (int j = 0; j < k; j++) {
-                local_a[i-1][j] = a[i*n + j];
-            }
-        }
-        for (int i = 1; i < n; i++) {
-            for (int j = k+1; j < n; j++) {
-                local_a[i-1][j-1] = a[i*n + j];
-            }
-        }
-
-        int sign_d;
-        double log_d;
-        CalculateLogDeterminantOf(n-1, local_a, &sign_d, &log_d);
-        if (c_k < 0) {
-            sign_d = sign_d * -1;
-        }
-        if (k % 2 == 1) {
-            sign_d = sign_d * -1;
-        }
-        log_d = log_d + log2(fabs(c_k));
-
-        if (sign_d > 0) {
-            if (log_x_0 < 0) {
-                log_x_0 = log_d;
-            } else {
-                sum_x += pow(2, log_d - log_x_0);
-            }
-        } else {
-            if (log_y_0 < 0) {
-                log_y_0 = log_d;
-            } else {
-                sum_y += pow(2, log_d - log_y_0);
+            if (j % comm_sz == my_rank) {
+                double *a_j = local_a[j / comm_sz];
+                double z = a_j[i] / a_i[i];
+                for (int k = i+1; k < n; k++) {
+                    a_j[k] -= z * a_i[k];
+                }
             }
         }
     }
 
-    double log_x = log_x_0 + log2(1 + sum_x);
-    double log_y = log_y_0 + log2(1 + sum_y);
-
-    if (log_x > log_y) {
-        (*sign_det) = 1;
-        (*log_det) = log_x + log2(1 - pow(2, log_y - log_x));
-    } else {
-        (*sign_det) = -1;
-        (*log_det) = log_y + log2(1 - pow(2, log_x - log_y));
+    double local_det = 0.0;
+    for (int i = 0; i < local_n; i++) {
+        local_det += log(fabs(local_a[i][i * comm_sz + my_rank]));
     }
-}
 
-void Do(int my_rank, int comm_sz, long n, double *a) {
     if (my_rank == 0) {
+        double det = local_det;
         for (int rank = 1; rank < comm_sz; rank++) {
-            MPI_Send(a, n*n, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
+            MPI_Recv(&local_det, 1, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            det += local_det;
         }
-    } else {
-        a = (double*) malloc(n*n*sizeof(double));
-        MPI_Recv(a, n*n, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
-
-    double log_x_0 = -1.0; // negative is invalid
-    double log_y_0 = -1.0; // negative is invalid
-
-    double sum_x = 0.0;
-    double sum_y = 0.0;
-
-    int sign_det;
-    double local_det;
-    CalculateLogDeterminantOfAfterCompacting(my_rank, comm_sz, n, a, &sign_det, &local_det);
-
-    if (sign_det > 0) {
-        log_x_0 = local_det;
-    } else {
-        log_y_0 = local_det;
-    }
-
-    if (my_rank == 0) {
-        double local_pair[2];
-        for (int t = 1; t < comm_sz; t++) {
-            MPI_Recv(&local_pair, 2, MPI_DOUBLE, t, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            if (local_pair[0] > 0) {
-                if (log_x_0 < 0) {
-                    log_x_0 = local_pair[1];
-                } else {
-                    sum_x += pow(2, local_pair[1] - log_x_0);
-                }
-            } else {
-                if (log_y_0 < 0) {
-                    log_y_0 = local_pair[1];
-                } else {
-                    sum_y += pow(2, local_pair[1] - log_y_0);
-                }
-            }
-        }
-
-        double log_x = log_x_0 + log2(1 + sum_x);
-        double log_y = log_y_0 + log2(1 + sum_y);
-
-        double det;
-        if (log_x > log_y) {
-            det = log_x + log2(1 - pow(2, log_y - log_x));
-        } else {
-            det = log_y + log2(1 - pow(2, log_x - log_y));
-        }
-
-        det = det / log2(exp(1));
         printf("log(abs(det)) = %e\n", det);
     } else {
-        double local_pair[2] = { sign_det, local_det };
-        MPI_Send(&local_pair, 2, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+        MPI_Send(&local_det, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
     }
+}
+
+void SyncRows(int my_rank, int comm_sz, long n, double** a) {
+    int local_n = n / comm_sz;
+    double** local_a = (double**) malloc(local_n*sizeof(double*));
+
+    for (int i = 0; i < n; i++) {
+        if (i % comm_sz == my_rank) {
+            local_a[i / comm_sz] = a[i];
+        } else {
+            MPI_Send(a[i], n, MPI_DOUBLE, i % comm_sz, 0, MPI_COMM_WORLD);
+        }
+    }
+
+    ComputeLogTrace(my_rank, comm_sz, n, local_n, local_a);
+}
+
+void SyncRowsRemote(int my_rank, int comm_sz, long n) {
+    int local_n = n / comm_sz;
+    double** local_a = (double**) malloc(local_n*sizeof(double*));
+    for (int i = 0; i < local_n; i++) {
+        local_a[i] = (double*) malloc(n*sizeof(double));
+        MPI_Recv(local_a[i], n, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+
+    ComputeLogTrace(my_rank, comm_sz, n, local_n, local_a);
 }
 
 int main(int argc, char* argv[]) {
@@ -176,21 +93,28 @@ int main(int argc, char* argv[]) {
 
     printf("my_rank=%d, comm_sz=%d, n=%ld, seed=%ld\n", my_rank, comm_sz, n, seed);
 
-    double *a;
+    double **a;
 
     if (my_rank == 0) {
-        a = (double*) malloc(n*n*sizeof(double));
+        a = (double**) malloc(n*sizeof(double*));
 
         srand(seed);
-        for (int i = 0; i < n*n; i++) {
-            *(a+i) = ((double) rand()) / ((double) RAND_MAX) - 0.5;
+        for (int i = 0; i < n; i++) {
+            a[i] = (double*) malloc(n*sizeof(double));
+            for (int j = 0; j < n; j++) {
+                a[i][j] = ((double) rand()) / ((double) RAND_MAX) - 0.5;
+            }
         }
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
     start = MPI_Wtime();
 
-    Do(my_rank, comm_sz, n, a);
+    if (my_rank == 0) {
+        SyncRows(my_rank, comm_sz, n, a);
+    } else {
+        SyncRowsRemote(my_rank, comm_sz, n);
+    }
 
     finish = MPI_Wtime();
     local_elapsed = finish - start;
