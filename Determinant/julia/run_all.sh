@@ -1,8 +1,8 @@
-. run_1_4096.sh
-. run_2_4096.sh
-. run_4_4096.sh
-. run_8_4096.sh
-. run_16_4096.sh
+. run_1_1024.sh
+. run_2_1024.sh
+. run_4_1024.sh
+. run_8_1024.sh
+. run_16_1024.sh
 . run_32_32.sh
 . run_32_64.sh
 . run_32_128.sh
@@ -12,4 +12,4 @@
 . run_32_2048.sh
 . run_32_4096.sh
 . run_32_8192.sh
-. run_64_4096.sh
+. run_64_1024.sh
