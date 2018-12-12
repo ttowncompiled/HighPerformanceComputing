@@ -1,6 +1,7 @@
 TARGET=julia_det
-NODES=3  # 1 less than the total #
+NODES=4
+MPIRUN?=mpirun
 JULIA?=julia
 
 run:
-	${JULIA} -p ${NODES} ${TARGET}.jl 128 256
+	${MPIRUN} -np ${NODES} ${JULIA} ${TARGET}.jl 128 1

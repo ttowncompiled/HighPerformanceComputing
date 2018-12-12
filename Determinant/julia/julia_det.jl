@@ -2,146 +2,74 @@ import MPI
 using Printf
 using Random
 
-function CalculateLogDeterminantOf(n, a)
-    sign_d::Int64 = 1
-    log_d::Float64 = 0.0
-
-    d::Float64 = 1.0
+function ComputeLogTrace(my_rank::Int64, comm_sz::Int64, n::Int64, local_n::Int64, local_a::Vector{Array{Float64}})
+    a_i::Array{Float64} = Array{Float64}(undef, n)
     for i in 1:n
-        if a[i, i] < 0
-            sign_d = sign_d * -1
-        end
-        d *= a[i, i]
-        for j in (i+1):n
-            z::Float64 = a[j, i] / a[i, i]
-            for k in (i+1):n
-                a[j, k] -= (z * a[i, k])
+        if (i-1) % comm_sz == my_rank
+            for j in 1:n
+                a_i[j] = local_a[convert(Int64, ceil(i / comm_sz))][j]
             end
-        end
-        if i % 16 == 0
-            log_d = log_d + log2(abs(d))
-            d = 1.0
-        end
-    end
-
-    sign_d, log_d + log2(abs(d))
-end
-
-function CalculateLogDeterminantOfAfterCompacting(my_rank, comm_sz, n, a)
-    local_a::Array{Float64, 2} = Array{Float64}(undef, n-1, n-1)
-
-    log_x_0::Float64 = -1.0
-    log_y_0::Float64 = -1.0
-
-    sum_x::Float64 = 0.0
-    sum_y::Float64 = 0.0
-
-    for k in (my_rank+1):comm_sz:n
-        c_k::Float64 = a[k]
-        for i in 2:n
-            for j in 1:(k-1)
-                local_a[i-1, j] = a[(i-1)*n + j]
-            end
-        end
-        for i in 2:n
-            for j in (k+1):n
-                local_a[i-1, j-1] = a[(i-1)*n + j]
-            end
-        end
-
-        sign_d::Int64, log_d::Float64 = CalculateLogDeterminantOf(n-1, local_a)
-        if c_k < 0
-            sign_d = sign_d * -1.0
-        end
-        if k % 2 == 0
-            sign_d = sign_d * -1.0
-        end
-        log_d = log_d + log2(abs(c_k))
-
-        if sign_d > 0
-            if log_x_0 < 0
-                log_x_0 = log_d
-            else
-                sum_x += 2^(log_d - log_x_0)
+            for rank in 0:(comm_sz-1)
+                if rank == my_rank
+                    continue
+                end
+                MPI.Send(a_i, rank, 0, MPI.COMM_WORLD)
             end
         else
-            if log_y_0 < 0
-                log_y_0 = log_d
-            else
-                sum_y += 2^(log_d - log_y_0)
+            MPI.Recv!(a_i, (i-1) % comm_sz, 0, MPI.COMM_WORLD)
+        end
+        for j in (i+1):n
+            if (j-1) % comm_sz == my_rank
+                z::Float64 = local_a[convert(Int64, ceil(j / comm_sz))][i] / a_i[i]
+                for k in (i+1):n
+                    local_a[convert(Int64, ceil(j / comm_sz))][k] -= z * a_i[k]
+                end
             end
         end
     end
 
-    log_x::Float64 = log_x_0 + log2(1 + sum_x)
-    log_y::Float64 = log_y_0 + log2(1 + sum_y)
+    local_det::Float64 = 0.0
+    for i in 1:local_n
+        local_det += log(abs(local_a[i][(i-1) * comm_sz + my_rank + 1]))
+    end
 
-    if log_x > log_y
-        1, log_x + log2(1 - 2^(log_y - log_x))
+    if my_rank == 0
+        det::Float64 = local_det
+        recv_det::Array{Float64} = Array{Float64}(undef, 1)
+        for rank in 1:(comm_sz-1)
+            MPI.Recv!(recv_det, rank, 0, MPI.COMM_WORLD)
+            det += recv_det[1]
+        end
+        @printf "log(abs(det)) = %e\n" det
     else
-        -1, log_y + log2(1 - 2^(log_x - log_y))
+        MPI.Send(local_det, 0, 0, MPI.COMM_WORLD)
     end
 end
 
-function Do(my_rank, comm_sz, n, a)
-    if my_rank == 0
-        for rank in 1:(comm_sz-1)
-            MPI.Send(a, rank, 0, MPI.COMM_WORLD)
+function SyncRows(my_rank::Int64, comm_sz::Int64, n::Int64, a::Array{Float64, 2})
+    local_n::Int64 = floor(n / comm_sz)
+    local_a::Vector{Array{Float64}} = []
+    for i in 1:n
+        if (i-1) % comm_sz == my_rank
+            push!(local_a, a[i, 1:n])
+        else
+            MPI.Send(a[i, 1:n], (i-1) % comm_sz, 0, MPI.COMM_WORLD)
         end
-    else
-        MPI.Recv!(a, 0, 0, MPI.COMM_WORLD)
     end
 
-    log_x_0::Float64 = -1.0
-    log_y_0::Float64 = -1.0
+    ComputeLogTrace(my_rank, comm_sz, n, local_n, local_a)
+end
 
-    sum_x::Float64 = 0.0
-    sum_y::Float64 = 0.0
-
-    sign_det::Int64, local_det::Float64 = CalculateLogDeterminantOfAfterCompacting(my_rank, comm_sz, n, a)
-
-    if sign_det > 0
-        log_x_0 = local_det
-    else
-        log_y_0 = local_det
+function SyncRowsRemote(my_rank::Int64, comm_sz::Int64, n::Int64)
+    local_n::Int64 = floor(n / comm_sz)
+    local_a::Vector{Array{Float64}} = []
+    for i in 1:local_n
+        local_a_i::Array{Float64} = Array{Float64}(undef, n)
+        MPI.Recv!(local_a_i, 0, 0, MPI.COMM_WORLD)
+        push!(local_a, local_a_i)
     end
 
-    local_pair::Array{Float64} = Array{Float64}(undef, 2)
-
-    if my_rank == 0
-        for rank in 1:(comm_sz-1)
-            MPI.Recv!(local_pair, rank, 0, MPI.COMM_WORLD)
-            if local_pair[1] > 0
-                if log_x_0 < 0
-                    log_x_0 = local_pair[2]
-                else
-                    sum_x += 2^(local_pair[2] - log_x_0)
-                end
-            else
-                if log_y_0 < 0
-                    log_y_0 = local_pair[2]
-                else
-                    sum_y += 2^(local_pair[2] - log_y_0)
-                end
-            end
-        end
-
-        log_x::Float64 = log_x_0 + log2(1 + sum_x)
-        log_y::Float64 = log_y_0 + log2(1 + sum_y)
-
-        det::Float64 = if log_x > log_y
-                log_x + log2(1 - 2^(log_y - log_x))
-            else
-                log_y + log2(1 - 2^(log_x - log_y))
-            end
-
-        det = det / log2(exp(1))
-        @printf "log(abs(det)) = %e\n" det
-    else
-        local_pair[1] = convert(Float64, sign_det)
-        local_pair[2] = local_det
-        MPI.Send(local_pair, 0, 0, MPI.COMM_WORLD)
-    end
+    ComputeLogTrace(my_rank, comm_sz, n, local_n, local_a)
 end
 
 function main()
@@ -154,19 +82,14 @@ function main()
 
     @printf "my_rank=%d, comm_sz=%d, n=%d, seed=%d\n" my_rank comm_sz n seed
 
-    a::Array{Float64} = if my_rank == 0
-            Random.seed!(seed)
-            rand(n*n) .- 0.5
-        else
-            Array{Float64}(undef, n*n)
-        end
-
     MPI.Barrier(MPI.COMM_WORLD)
 
     if my_rank == 0
-        @time Do(my_rank, comm_sz, n, a)
+        Random.seed!(seed)
+        a::Array{Float64, 2} = rand(n, n) .- 0.5
+        @time SyncRows(my_rank, comm_sz, n, a)
     else
-        Do(my_rank, comm_sz, n, a)
+        SyncRowsRemote(my_rank, comm_sz, n)
     end
 
     MPI.Barrier(MPI.COMM_WORLD)
